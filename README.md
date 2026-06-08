@@ -1,6 +1,6 @@
 # Práctica Spaceship ROS2
 
-1. Copiar la carpeta `spaceship` dentro de `~/ros_ws/src`.
+1. Copiar todas las carpetas dentro de una carpeta `spaceship` dentro de `~/ros_ws/src`.
 2. Compilar desde la raíz del workspace:
    `cd ~/ros_ws && source /opt/ros/jazzy/setup.bash && colcon build && source install/setup.bash`
 3. Ejecutar sin viento:
