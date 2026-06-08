@@ -79,7 +79,7 @@ class RvizPublisher(Node):
 
         self.get_logger().info('RvizPublisher iniciado.')
 
-    # ── Callbacks ─────────────────────────────────────────────────────
+    # Callbacks 
 
     def on_ship_state(self, msg: ShipState):
         # Actualizar target desde el estado si aún no lo tenemos
@@ -103,7 +103,7 @@ class RvizPublisher(Node):
         self.target_y = msg.point.y
         self.trail.clear()   # reset trayectoria al cambiar target
 
-    # ── Publicación ───────────────────────────────────────────────────
+    #Publicación
 
     def _publish(self, s: ShipState):
         now   = self.get_clock().now().to_msg()
@@ -123,7 +123,7 @@ class RvizPublisher(Node):
 
         self.pub_markers.publish(marks)
 
-    # ── Marcadores ────────────────────────────────────────────────────
+    #Marcadores
 
     def _ship_body(self, s: ShipState, now) -> Marker:
         """Cuerpo de la nave: T invertida con nariz apuntando a +X local."""

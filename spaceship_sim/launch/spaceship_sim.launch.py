@@ -2,7 +2,6 @@
 Launch principal del simulador de la nave espacial.
 
 USO
-───
   # Sin target (usar click en RViz):
   ros2 launch spaceship_sim spaceship_sim.launch.py
 

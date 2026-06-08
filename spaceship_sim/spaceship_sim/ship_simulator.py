@@ -37,18 +37,18 @@ from tf2_ros import TransformBroadcaster
 from spaceship_msgs.msg import MotorCommand, ShipState
 from spaceship_msgs.srv import SetMotorPower
 
-# ── Constantes físicas ────────────────────────────────────────────────
+#Constantes físicas
 MAX_THRUST    = 3.0
 ARM_LENGTH    = 0.7
 LINEAR_DRAG   = 0.5
 ANGULAR_DRAG  = 1.2
 INERTIA       = 1.5
 
-# ── Condiciones de llegada ────────────────────────────────────────────
+# Condiciones de llegada 
 ARRIVAL_DIST  = 2.0
 ARRIVAL_SPEED = 0.1
 
-# ── Valor centinela "sin target" ──────────────────────────────────────
+# Valor centinela "sin target"
 _NO_TARGET = -999.0
 
 
@@ -57,7 +57,7 @@ class ShipSimulator(Node):
     def __init__(self):
         super().__init__('ship_simulator')
 
-        # ── Parámetros ────────────────────────────────────────────────
+        # Parámetros 
         self.declare_parameter('target_x',       _NO_TARGET)
         self.declare_parameter('target_y',       _NO_TARGET)
         self.declare_parameter('start_x',        0.0)
@@ -79,7 +79,7 @@ class ShipSimulator(Node):
         self.wind_strength  = self.get_parameter('wind_strength').value
         self.wind_frequency = self.get_parameter('wind_frequency').value
 
-        # ── Estado de la nave ─────────────────────────────────────────
+        #Estado de la nave
         self.x       = sx
         self.y       = sy
         self.heading = sh
@@ -87,20 +87,20 @@ class ShipSimulator(Node):
         self.vy      = 0.0
         self.omega   = 0.0
 
-        # ── Motores ───────────────────────────────────────────────────
+        # Motores 
         self.power_m1 = 0.0
         self.power_m2 = 0.0
 
-        # ── Target ────────────────────────────────────────────────────
+        #Target
         self.target_x = tx if tx != _NO_TARGET else None
         self.target_y = ty if ty != _NO_TARGET else None
 
-        # ── Cronómetro ────────────────────────────────────────────────
+        #Cronómetro 
         self.elapsed_time  = 0.0
         self.timer_running = False
         self.arrived       = False
 
-        # ── Viento ───────────────────────────────────────────────────
+        #  Viento
         # El RNG se inicializa en el primer impulso (no antes)
         # para garantizar la misma secuencia de viento a todos los grupos
         self._rng: random.Random | None = None   # None hasta primer impulso
@@ -111,7 +111,7 @@ class ShipSimulator(Node):
         self._wind_target_fy = 0.0 # objetivo de interpolación Y
         self._next_wind_change = 0.0  # tiempo del próximo cambio de dirección
 
-        # ── Topics ────────────────────────────────────────────────────
+        # Topics 
         self.create_subscription(
             MotorCommand, '/motor_command', self.on_motor_command, 10)
         self.create_subscription(
@@ -124,7 +124,7 @@ class ShipSimulator(Node):
         self.pub_target = self.create_publisher(PointStamped, '/ship_target', 10)
 
         # TF broadcaster — publica world→base_link para que RViz tenga el frame "world"
-        # y el tool PublishPoint pueda proyectar clicks a coordenadas del mundo
+        # y el PublishPoint pueda proyectar clicks a coordenadas del mundo
         self._tf_broadcaster = TransformBroadcaster(self)
 
         # Timer físico a 50 Hz
@@ -142,7 +142,7 @@ class ShipSimulator(Node):
             f'(activa en el primer impulso)'
         )
 
-    # ── Callbacks ─────────────────────────────────────────────────────
+    #Callbacks
 
     def on_motor_command(self, msg: MotorCommand):
         power = float(max(0, min(100, msg.power)))
@@ -192,7 +192,7 @@ class ShipSimulator(Node):
         )
         self._publish_target()
 
-    # ── Inicialización y reset ────────────────────────────────────────
+    #Inicialización y reset
 
     def _init_wind(self):
         """
@@ -207,7 +207,7 @@ class ShipSimulator(Node):
         self._wind_fy   = 0.0
         self._next_wind_change = 0.0   # primer cambio inmediato
         self.get_logger().info(
-            f'💨 Viento inicializado (seed={self.wind_seed})'
+            f'Viento inicializado (seed={self.wind_seed})'
         )
 
     def _reset_run(self):
@@ -220,13 +220,13 @@ class ShipSimulator(Node):
         self._wind_fx      = 0.0
         self._wind_fy      = 0.0
 
-    # ── Viento ────────────────────────────────────────────────────────
+    #  Viento 
 
     def _update_wind(self, dt: float):
         """
         Actualiza la fuerza de viento con interpolación suave.
 
-        El viento cambia de dirección cada ~1/wind_frequency segundos,
+        El viento cambia de dirección cada 1/wind_frequency segundos,
         interpolando suavemente entre direcciones aleatorias.
         La secuencia es completamente determinista dado wind_seed.
         """
@@ -244,18 +244,18 @@ class ShipSimulator(Node):
             )
             self._wind_target_fx = strength * math.cos(angle)
             self._wind_target_fy = strength * math.sin(angle)
-            # Próximo cambio: periodo base + variación aleatoria ±30%
+            # Próximo cambio: periodo base + variación aleatoria
             period = 1.0 / max(self.wind_frequency, 0.01)
             self._next_wind_change = (
                 self._wind_time + period * self._rng.uniform(0.7, 1.3)
             )
 
-        # Interpolación suave (low-pass) hacia el objetivo
-        alpha = min(1.0, dt * 2.0)   # constante de tiempo ~0.5s
+        # Interpolación suave hacia el objetivo
+        alpha = min(1.0, dt * 2.0)   # constante de tiempo 0.5s
         self._wind_fx += (self._wind_target_fx - self._wind_fx) * alpha
         self._wind_fy += (self._wind_target_fy - self._wind_fy) * alpha
 
-    # ── Física ────────────────────────────────────────────────────────
+    # Física 
 
     def physics_step(self):
         dt = 0.02
@@ -263,13 +263,13 @@ class ShipSimulator(Node):
         f1 = (self.power_m1 / 100.0) * MAX_THRUST
         f2 = (self.power_m2 / 100.0) * MAX_THRUST
 
-        # Traslación: solo la componente común (promedio)
-        ft = (f1 + f2) / 2.0  # ← dividir entre 2, no sumar
+        # Traslación
+        ft = (f1 + f2) / 2.0  # dividir entre 2, no sumar
         ax = ft * math.cos(self.heading) - self.vx * LINEAR_DRAG
         ay = ft * math.sin(self.heading) - self.vy * LINEAR_DRAG
 
-        # Rotación: diferencial puro
-        torque = (f1 - f2) * ARM_LENGTH   # M1 izq (Y−) → empuja → gira derecha ✓
+        # Rotación
+        torque = (f1 - f2) * ARM_LENGTH  
         alpha = torque / INERTIA - self.omega * ANGULAR_DRAG
 
         # Viento (solo activo desde el primer impulso)
@@ -307,14 +307,12 @@ class ShipSimulator(Node):
                     f'dist={dist:.2f}m  speed={speed:.3f}m/s'
                 )
 
-    # ── Publicación ───────────────────────────────────────────────────
+    # Publicación 
 
     def publish_state(self):
         now = self.get_clock().now().to_msg()
 
-        # ── TF: world → base_link ─────────────────────────────────────
-        # Necesario para que RViz reconozca el frame "world" y el tool
-        # PublishPoint pueda transformar clicks a coordenadas del mundo.
+        # Necesario para que RViz reconozca el frame y PublishPoint pueda transformar clicks a coordenadas del mundo.
         t = TransformStamped()
         t.header.stamp    = now
         t.header.frame_id = 'world'
@@ -326,7 +324,7 @@ class ShipSimulator(Node):
         t.transform.rotation.w = math.cos(self.heading / 2.0)
         self._tf_broadcaster.sendTransform(t)
 
-        # ── ShipState ─────────────────────────────────────────────────
+        # ShipState
         msg = ShipState()
         msg.header.stamp    = self.get_clock().now().to_msg()
         msg.header.frame_id = 'world'

@@ -42,7 +42,7 @@ class ShipController(Node):
     def __init__(self):
         super().__init__('ship_controller')
 
-        # ── Parámetros configurables ──────────────────────────────────
+        #Parámetros configurables
         self.declare_parameter('target_x', 0.0)
         self.declare_parameter('target_y', 0.0)
         self.declare_parameter('max_power', 80)
@@ -53,7 +53,7 @@ class ShipController(Node):
         self.max_power = int(self.get_parameter('max_power').value)
         self.turn_power = int(self.get_parameter('turn_power').value)
 
-        # ── Estado interno ────────────────────────────────────────────
+        # Estado interno 
         self.state = State.IDLE
         self.ship: ShipState | None = None
         self._turn_dir = 0   # +1 izquierda, -1 derecha, 0 sin decidir
@@ -61,10 +61,10 @@ class ShipController(Node):
         # Umbral de orientación antes de empujar (radianes)
         self.ORIENT_THRESH = 0.25
 
-        # ── Cliente del servicio (R2) ─────────────────────────────────
+        #Cliente del servicio (R2) 
         self.motor_client = self.create_client(SetMotorPower, '/set_motor_power')
         
-        # ── Publisher de depuración del controlador (R4) ───────────────────
+        # Publisher de depuración del controlador (R4)
         self.debug_pub = self.create_publisher(ControlDebug, '/control_debug', 10)
         #-
         self.marker_pub = self.create_publisher(MarkerArray, '/controller_markers', 10)
@@ -76,7 +76,7 @@ class ShipController(Node):
         self._last_power = 0
         self._last_m1 = 0
         self._last_m2 = 0
-        # ── Suscripción al estado (R3) ────────────────────────────────
+        # Suscripción al estado (R3) 
         self.create_subscription(ShipState, '/ship_state', self._on_ship_state, 10)
 
         # Bucle de control a 20 Hz (mismo ritmo que el simulador publica)
@@ -90,7 +90,7 @@ class ShipController(Node):
             self.get_logger().info(
                 f'Target desde parámetros: ({self.target_x:.1f}, {self.target_y:.1f})')
 
-    # ── Callback del topic /ship_state ────────────────────────────────
+    # Callback del topic /ship_state
 
     def _on_ship_state(self, msg: ShipState):
         self.ship = msg
@@ -119,7 +119,7 @@ class ShipController(Node):
                 self.get_logger().info(
                     f'Target actualizado desde ship_state: ({self.target_x:.1f}, {self.target_y:.1f})'
                 )
-    # ── Bucle de control ──────────────────────────────────────────────
+    # Bucle de control
 
     def _control_loop(self):
         if self.ship is None or self.state in (State.IDLE, State.ARRIVED):
@@ -135,7 +135,7 @@ class ShipController(Node):
 
         self._simple_control(s)
 
-    # ── Estados ───────────────────────────────────────────────────────
+    # Estados
 
 
     def _simple_control(self, s: ShipState):
@@ -297,7 +297,7 @@ class ShipController(Node):
         msg.power_m2 = int(max(0, min(100, self._last_m2)))
 
         self.debug_pub.publish(msg)
-    # ── Log periódico ─────────────────────────────────────────────────
+    #Log periódico
 
     def _log_status(self):
         if self.ship is None:
@@ -318,7 +318,7 @@ class ShipController(Node):
             f'herr={math.degrees(herr):.0f}°  '
             f't={s.elapsed_time:.1f}s')
 
-    # ── Llamada al servicio (R2) ──────────────────────────────────────
+    # Llamada al servicio (R2)
 
     def _set_motor(self, motor_id: int, power: int):
         """Envía un comando de motor al simulador vía servicio (asíncrono)."""
@@ -349,7 +349,7 @@ class ShipController(Node):
 
         markers = MarkerArray()
 
-        # ── Marcador 1: Texto con fase, distancia y tiempo ────────────
+        # Marcador 1: Texto con fase, distancia y tiempo
         dx = self.target_x - s.x
         dy = self.target_y - s.y
         dist = math.sqrt(dx * dx + dy * dy)
@@ -376,7 +376,7 @@ class ShipController(Node):
         )
         markers.markers.append(m_text)
 
-        # ── Marcador 2: Flecha heading deseado ────────────────────────
+        # Marcador 2: Flecha heading deseado
         arrow_len = 3.5
         m_arrow = Marker()
         m_arrow.header.stamp = now
@@ -403,7 +403,7 @@ class ShipController(Node):
         m_arrow.points = [p_start, p_end]
         markers.markers.append(m_arrow)
 
-        # ── Marcador 3: Flecha hacia el target ────────────────────────
+        # Marcador 3: Flecha hacia el target 
         m_line = Marker()
         m_line.header.stamp = now
         m_line.header.frame_id = 'world'
